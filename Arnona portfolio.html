@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arnona Portfolio</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #1f1f2e;
+        color: #ffffff;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    .subheader {
+        text-align: center;
+        font-size: 9px;
+        color: #aaa;
+        margin-bottom: 20px;
+    }
+
+    .portfolio-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background-color: #2b2b3d;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    table th, table td {
+        padding: 12px;
+        text-align: center;
+        border-bottom: 1px solid #444;
+    }
+
+    table th {
+        background-color: #3a3a5c;
+    }
+
+    table td input, table td select {
+        width: 90%;
+        padding: 5px;
+        border-radius: 5px;
+        border: none;
+        text-align: center;
+    }
+
+    .add-btn, .save-btn, .clear-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        margin-bottom: 20px;
+        margin-right: 10px;
+    }
+
+    .add-btn {
+        background-color: #4caf50;
+    }
+
+    .add-btn:hover {
+        background-color: #45a049;
+    }
+
+    .save-btn {
+        background-color: #2196F3;
+    }
+
+    .save-btn:hover {
+        background-color: #0b7dda;
+    }
+
+    .clear-btn {
+        background-color: #f44336;
+    }
+
+    .clear-btn:hover {
+        background-color: #d32f2f;
+    }
+
+    .summary {
+        display: flex;
+        justify-content: space-between;
+        font-size: 18px;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #3a3a5c;
+        border-radius: 5px;
+    }
+
+    .budget-info {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .budget-remaining {
+        color: #4caf50;
+        font-weight: bold;
+    }
+
+    .budget-exceeded {
+        color: #f44336;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<h1>Arnona Portfolio</h1>
+
+<div class="portfolio-container">
+    <button class="add-btn" onclick="addRow()">Add Investment</button>
+    <button class="save-btn" onclick="savePortfolio()">Save Portfolio</button>
+    <button class="clear-btn" onclick="clearPortfolio()">Clear All</button>
+    
+    <table id="portfolio">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Company</th>
+                <th>Category</th>
+                <th>Stock Price (₱)</th>
+                <th>Shares</th>
+                <th>Total Cost (₱)</th>
+                <th>Date & Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will appear here -->
+        </tbody>
+    </table>
+    <div class="summary">
+        <div class="budget-info">
+            <div>Initial Budget: ₱<span id="initialBudget">200,000.00</span></div>
+            <div>Remaining Budget: <span id="remainingBudget" class="budget-remaining">₱200,000.00</span></div>
+        </div>
+        <div>Total Portfolio Value: ₱<span id="totalValue">0.00</span></div>
+    </div>
+</div>
+
+<script>
+// Company data
+const companies = [
+    { symbol: "AC", name: "Ayala Corporation" },
+    { symbol: "AEV", name: "Aboitiz Equity Ventures, Inc." },
+    { symbol: "AGI", name: "Alliance Global Group, Inc." },
+    { symbol: "ALI", name: "Ayala Land, Inc." },
+    { symbol: "AP", name: "Aboitiz Power Corporation" },
+    { symbol: "BDO", name: "BDO Unibank, Inc." },
+    { symbol: "BLOOM", name: "Bloomberry Resorts Corporation" },
+    { symbol: "BPI", name: "Bank of the Philippine Islands" },
+    { symbol: "DMC", name: "DMCI Holdings, Inc." },
+    { symbol: "FGEN", name: "First Gen Corporation" },
+    { symbol: "GLO", name: "Globe Telecom, Inc." },
+    { symbol: "GTCAP", name: "GT Capital Holdings, Inc." },
+    { symbol: "ICT", name: "Int'l Container Terminal Services, Inc." },
+    { symbol: "JFC", name: "Jollibee Foods Corporation" },
+    { symbol: "JGS", name: "JG Summit Holdings, Inc." },
+    { symbol: "LTG", name: "LT Group, Inc." },
+    { symbol: "MBT", name: "Metropolitan Bank and Trust Company" },
+    { symbol: "MEG", name: "Megaworld Corporation" },
+    { symbol: "MER", name: "Manila Electric Company" },
+    { symbol: "PGOLD", name: "Puregold Price Club, Inc." },
+    { symbol: "RLC", name: "Robinsons Land Corporation" },
+    { symbol: "RRHI", name: "Robinsons Retail Holdings, Inc." },
+    { symbol: "SECB", name: "Security Bank Corporation" },
+    { symbol: "SM", name: "SM Investments Corporation" },
+    { symbol: "SMC", name: "San Miguel Corporation" },
+    { symbol: "SMPH", name: "SM Prime Holdings, Inc." },
+    { symbol: "TEL", name: "PLDT, Inc." },
+    { symbol: "URC", name: "Universal Robina Corporation" }
+];
+
+// Initialize budget
+let initialBudget = 200000;
+let remainingBudget = initialBudget;
+
+// Load saved portfolio on page load
+window.onload = function() {
+    loadPortfolio();
+};
+
+function addRow(data = null) {
+    const table = document.getElementById("portfolio").getElementsByTagName('tbody')[0];
+    const row = table.insertRow();
+
+    const symbolCell = row.insertCell(0);
+    const companyCell = row.insertCell(1);
+    const categoryCell = row.insertCell(2);
+    const priceCell = row.insertCell(3);
+    const sharesCell = row.insertCell(4);
+    const totalCell = row.insertCell(5);
+    const dateCell = row.insertCell(6);
+    const actionCell = row.insertCell(7);
+
+    // If data is provided, use it to populate the row
+    if (data) {
+        // Create company dropdown
+        let companyOptions = '<select onchange="updateCompanyName(this); savePortfolio()">';
+        companyOptions += '<option value="">Select a company</option>';
+        companies.forEach(company => {
+            companyOptions += `<option value="${company.symbol}" ${data.symbol === company.symbol ? 'selected' : ''}>${company.symbol}</option>`;
+        });
+        companyOptions += '</select>';
+        
+        symbolCell.innerHTML = companyOptions;
+        companyCell.innerHTML = `<input type="text" value="${data.company}" readonly>`;
+        categoryCell.innerHTML = `<select onchange="savePortfolio()">
+                                    <option value="Long-term" ${data.category === 'Long-term' ? 'selected' : ''}>Long-term</option>
+                                    <option value="Short-term" ${data.category === 'Short-term' ? 'selected' : ''}>Short-term</option>
+                                  </select>`;
+        priceCell.innerHTML = `<input type="number" value="${data.price}" oninput="updateTotal(this); savePortfolio()">`;
+        sharesCell.innerHTML = `<input type="number" value="${data.shares}" oninput="updateTotal(this); savePortfolio()">`;
+        totalCell.innerHTML = data.total;
+        dateCell.innerHTML = `<input type="datetime-local" value="${data.date}" onchange="savePortfolio()">`;
+    } else {
+        // Default empty row
+        let companyOptions = '<select onchange="updateCompanyName(this); savePortfolio()">';
+        companyOptions += '<option value="">Select a company</option>';
+        companies.forEach(company => {
+            companyOptions += `<option value="${company.symbol}">${company.symbol}</option>`;
+        });
+        companyOptions += '</select>';
+        
+        symbolCell.innerHTML = companyOptions;
+        companyCell.innerHTML = '<input type="text" placeholder="Company name" readonly>';
+        categoryCell.innerHTML = `<select onchange="savePortfolio()">
+                                    <option value="Long-term">Long-term</option>
+                                    <option value="Short-term">Short-term</option>
+                                  </select>`;
+        priceCell.innerHTML = '<input type="number" placeholder="0" oninput="updateTotal(this); savePortfolio()">';
+        sharesCell.innerHTML = '<input type="number" placeholder="0" oninput="updateTotal(this); savePortfolio()">';
+        totalCell.innerHTML = '0.00';
+        
+        // Create a customizable date input
+        const now = new Date();
+        const formattedDate = now.toISOString().slice(0, 16);
+        dateCell.innerHTML = `<input type="datetime-local" value="${formattedDate}" onchange="savePortfolio()">`;
+    }
+    
+    actionCell.innerHTML = '<button onclick="deleteRow(this)">Delete</button>';
+    
+    // Update portfolio value after adding row
+    updatePortfolioValue();
+}
+
+function updateCompanyName(selectElement) {
+    const row = selectElement.parentElement.parentElement;
+    const selectedSymbol = selectElement.value;
+    const companyInput = row.cells[1].firstChild;
+    
+    // Find the company name for the selected symbol
+    const company = companies.find(c => c.symbol === selectedSymbol);
+    if (company) {
+        companyInput.value = company.name;
+    } else {
+        companyInput.value = '';
+    }
+    
+    savePortfolio();
+}
+
+function updateTotal(input) {
+    const row = input.parentElement.parentElement;
+    const price = parseFloat(row.cells[3].firstChild.value) || 0;
+    const shares = parseFloat(row.cells[4].firstChild.value) || 0;
+    const total = price * shares;
+    row.cells[5].innerText = total.toFixed(2);
+    updatePortfolioValue();
+}
+
+function deleteRow(btn) {
+    const row = btn.parentElement.parentElement;
+    row.remove();
+    updatePortfolioValue();
+    savePortfolio();
+}
+
+function updatePortfolioValue() {
+    const table = document.getElementById("portfolio").getElementsByTagName('tbody')[0];
+    let sum = 0;
+    for (let i = 0; i < table.rows.length; i++) {
+        sum += parseFloat(table.rows[i].cells[5].innerText) || 0;
+    }
+    document.getElementById("totalValue").innerText = sum.toFixed(2);
+    
+    // Update remaining budget
+    remainingBudget = initialBudget - sum;
+    const remainingBudgetElement = document.getElementById("remainingBudget");
+    remainingBudgetElement.textContent = "₱" + remainingBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    // Change color if budget is exceeded
+    if (remainingBudget < 0) {
+        remainingBudgetElement.className = "budget-exceeded";
+    } else {
+        remainingBudgetElement.className = "budget-remaining";
+    }
+}
+
+function savePortfolio() {
+    const table = document.getElementById("portfolio").getElementsByTagName('tbody')[0];
+    const portfolioData = [];
+    
+    for (let i = 0; i < table.rows.length; i++) {
+        const row = table.rows[i];
+        const symbol = row.cells[0].firstChild.value;
+        const company = row.cells[1].firstChild.value;
+        const category = row.cells[2].firstChild.value;
+        const price = row.cells[3].firstChild.value;
+        const shares = row.cells[4].firstChild.value;
+        const total = row.cells[5].innerText;
+        const date = row.cells[6].firstChild.value;
+        
+        portfolioData.push({
+            symbol,
+            company,
+            category,
+            price,
+            shares,
+            total,
+            date
+        });
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('stockPortfolio', JSON.stringify(portfolioData));
+    localStorage.setItem('portfolioBudget', initialBudget.toString());
+    
+    // Show a brief confirmation
+    const saveBtn = document.querySelector('.save-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = 'Saved!';
+    setTimeout(() => {
+        saveBtn.textContent = originalText;
+    }, 1000);
+}
+
+function loadPortfolio() {
+    const savedPortfolio = localStorage.getItem('stockPortfolio');
+    const savedBudget = localStorage.getItem('portfolioBudget');
+    
+    if (savedBudget) {
+        initialBudget = parseFloat(savedBudget);
+        document.getElementById("initialBudget").textContent = initialBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    
+    if (savedPortfolio) {
+        const portfolioData = JSON.parse(savedPortfolio);
+        const table = document.getElementById("portfolio").getElementsByTagName('tbody')[0];
+        table.innerHTML = ''; // Clear existing rows
+        
+        portfolioData.forEach(stock => {
+            addRow(stock);
+        });
+        
+        updatePortfolioValue();
+    }
+}
+
+function clearPortfolio() {
+    if (confirm("Are you sure you want to clear all portfolio data? This cannot be undone.")) {
+        const table = document.getElementById("portfolio").getElementsByTagName('tbody')[0];
+        table.innerHTML = '';
+        localStorage.removeItem('stockPortfolio');
+        updatePortfolioValue();
+    }
+}
+
+// Initialize the budget display
+document.getElementById("initialBudget").textContent = initialBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+</script>
+
+</body>
+</html>
